@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import httplib2
+import ssl
 import re
 import socket
 import sys
@@ -22,13 +23,15 @@ def validate_links(links):
     print('Validating {} links...'.format(len(links)))
     errors = []
     for link in links:
-        h = httplib2.Http(disable_ssl_certificate_validation=True, timeout=5)
+        h = httplib2.Http(timeout=5)
         try:
             resp = h.request(link, 'HEAD')
             code = int(resp[0]['status'])
             # check if status code is a client or server error
             if code >= 404:
                 errors.append('{}: {}'.format(code, link))
+        except (ssl.SSLError, httplib2.HttpLib2Error) as error:
+            errors.append("TLS/HTTP: {} : {}".format(error, link))
         except TimeoutError:
             errors.append("TMO: " + link)
         except socket.error as socketerror:
